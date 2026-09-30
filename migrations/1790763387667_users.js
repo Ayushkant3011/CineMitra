@@ -4,10 +4,10 @@ export const up = (pgm) => {
 
     pgm.createTable('users', {
         id:{ type:'bigint', primaryKey:true, sequenceGenerated: { precedence: 'ALWAYS' }},
-        firstName: { type:'text', notNull:true },
-        lastName: { type:'text', notNull:true },
+        first_name: { type:'text', notNull:true },
+        last_name: { type:'text', notNull:true },
         email: { type:'citext', notNull:true, unique:true },
-        password:{ type:'text', notNull:true },
+        password_hash:{ type:'text', notNull:true },
         role:{
             type:'text',
             notNull:true,
