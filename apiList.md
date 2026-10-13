@@ -22,7 +22,7 @@ JWT tokens, cookie-based (not `Authorization` headers).
 
 | Method | Path | Auth | Request body | Response | Notes |
 |---|---|---|---|---|---|
-| POST | `/api/signup` | none | `{ name, email, password }` | user object; sets cookies | |
+| POST | `/api/signup` | none | `{ firstName, lastName, email, password }` | user object; sets cookies | |
 | POST | `/api/login` | none | `{ email, password }` | user object; sets cookies | |
 | POST | `/api/refresh` | refresh cookie | — | sets new access token cookie | |
 | POST | `/api/logout` | required | — | `204` | clears both cookies |

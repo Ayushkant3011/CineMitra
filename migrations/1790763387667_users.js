@@ -1,5 +1,5 @@
 
-export const up = (pgm) => {
+exports.up = (pgm) => {
     pgm.createExtension('citext', { ifNotExists: true });
 
     pgm.createTable('users', {
@@ -20,6 +20,6 @@ export const up = (pgm) => {
     });
 };
 
-export const down = (pgm) => {
+exports.down = (pgm) => {
     pgm.dropTable('users');
 };
