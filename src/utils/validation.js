@@ -9,4 +9,9 @@ const signupSchema = z.object({
      .regex(/\d/, "must contain a number"), // bcrypt ignores bytes past 72
 });
 
-module.exports = { signupSchema };
+const loginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(1).max(72),
+});
+
+module.exports = { signupSchema, loginSchema };
