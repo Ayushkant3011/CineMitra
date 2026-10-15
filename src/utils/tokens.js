@@ -1,4 +1,4 @@
-const jwtToken = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const env = require("../config/env");
 const { path } = require("../app");
 

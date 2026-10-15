@@ -1,22 +1,32 @@
 const express = require("express")
-const app = express();
-
 const cors = require("cors")
 const helmet = require("helmet")
+const cookieParser = require("cookie-parser");
+const env = require("./config/env");
 
+const { errorHandler } = require("./middlewares/errorHanlder");
+
+const app = express();
 
 app.use(helmet());
 app.use(cors({
-    origin:process.env.CLIENT_URL
+    origin:env.clientUrl,
+    credentials: true,
 }));
 
 app.use(express.json());
+app.use(cookieParser());
+
+
+const authRouter = require("./routes/auth");
+
 
 
 app.get("/health", (req, res)=>{
     res.json({ status:"ok", service:"cinemitra-api"});
 });
 
+app.use("/api", authRouter);
 
 // 404 For unknown Routes
 app.use((req,res) =>{
@@ -24,12 +34,12 @@ app.use((req,res) =>{
 });
 
 
-app.use((err, req, res, next) =>{
-    console.log(err);
+// app.use((err, req, res, next) =>{
+//     console.log(err);
 
-    res.status(err.status || 500).json({err: err.message || "Internal Server Error"});
-});
+//     res.status(err.status || 500).json({err: err.message || "Internal Server Error"});
+// });
 
-
+app.use(errorHandler);
 
 module.exports = app;

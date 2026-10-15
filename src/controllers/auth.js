@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const User = require("../repositories/user.repository");
@@ -17,14 +17,14 @@ const signup = asyncHandler(async (req, res) =>{
         const {firstName, lastName, email, password} = req.body;
 
         // Hash Password
-        const hashPass = await bcrypt.hash(password, 10);
-
+        const passwordHash = await bcrypt.hash(password, 10);
+        
         let row;
         row = await User.createUser({ 
             firstName,
             lastName,
             email,
-            hashPass,
+            passwordHash,
         });
 
 
@@ -33,7 +33,7 @@ const signup = asyncHandler(async (req, res) =>{
             refreshToken: signRefreshToken(row),
         });
 
-        res.status(200).json({
+        res.status(201).json({
             data: { user: toPublicUser(row)}
         });
     }
