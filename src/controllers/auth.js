@@ -38,7 +38,7 @@ const signup = asyncHandler(async (req, res) =>{
         });
     }
     catch(err){
-        if(err.code === "23505") 
+        if(err.code === "23505" && err.constraint === "users_email_key") 
             throw new AppError(409, "EMAIL TAKEN", "An Account with this email already exists");
 
         throw err;
