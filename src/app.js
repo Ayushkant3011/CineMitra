@@ -19,6 +19,7 @@ app.use(cookieParser());
 
 
 const authRouter = require("./routes/auth");
+const userRouter = require("./routes/user");
 
 
 
@@ -27,7 +28,7 @@ app.get("/health", (req, res)=>{
 });
 
 app.use("/api", authRouter);
-
+app.use("/api", userRouter);
 // 404 For unknown Routes
 app.use((req,res) =>{
     res.status(404).json({error: "Route not Found!!!!"});

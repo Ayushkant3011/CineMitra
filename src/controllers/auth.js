@@ -80,16 +80,6 @@ const login = asyncHandler(async(req, res) =>{
     }
 });
 
-const getProfile = asyncHandler( async(req, res) =>{
-    try{
-        const user = req.user;
-        res.status(200).json({
-            data: { user: toPublicUser(user)}
-        });
-    }
-    catch(err){
-        res.status(400).send("ERROR : " + err.message);
-    }
-});
 
-module.exports = { signup, login, getProfile };
+
+module.exports = { signup, login };
