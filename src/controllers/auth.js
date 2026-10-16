@@ -80,6 +80,13 @@ const login = asyncHandler(async(req, res) =>{
     }
 });
 
+const logout = asyncHandler(async(req, res) =>{
+    res.cookie("access_token", null, {
+        expires: new Date(Date.now()),
+    })
+    .send("Logout SuccessFull !!!");
+});
 
 
-module.exports = { signup, login };
+
+module.exports = { signup, login, logout };
