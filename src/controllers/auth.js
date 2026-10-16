@@ -3,6 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
 const User = require("../repositories/user.repository");
 const { signAccessToken, signRefreshToken, setAuthCookies } = require("../utils/tokens");
+const { user } = require("pg/lib/defaults");
 
 
 const DUMMY_HASH = bcrypt.hashSync("Not-a-real-pass", 10);
@@ -79,4 +80,16 @@ const login = asyncHandler(async(req, res) =>{
     }
 });
 
-module.exports = { signup, login };
+const getProfile = asyncHandler( async(req, res) =>{
+    try{
+        const user = req.user;
+        res.status(200).json({
+            data: { user: toPublicUser(user)}
+        });
+    }
+    catch(err){
+        res.status(400).send("ERROR : " + err.message);
+    }
+});
+
+module.exports = { signup, login, getProfile };
