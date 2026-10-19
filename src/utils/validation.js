@@ -14,4 +14,21 @@ const loginSchema = z.object({
   password: z.string().min(1).max(72),
 });
 
-module.exports = { signupSchema, loginSchema };
+
+const movieSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  description: z.string().trim().max(2000).optional(),
+  language: z.string().trim().min(1).max(50),
+  genre: z.string().trim().max(100).optional(),
+  durationMinutes: z.number().int().positive().max(600),
+  posterUrl: z.string().trim().url().max(500).optional(),
+  releaseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD").optional(),
+});
+
+const movieUpdateSchema = movieSchema
+  .partial()
+  .refine((obj) => Object.keys(obj).length > 0, "at least one field is required");
+
+
+
+module.exports = { signupSchema, loginSchema, movieSchema, movieUpdateSchema };
