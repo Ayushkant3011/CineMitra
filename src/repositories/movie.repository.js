@@ -37,7 +37,7 @@ const createMovie = async(m) =>{
 
 const updateMovie = async(id, fields) =>{
     const keys = Object.keys(fields).filter((k) => COLUMN_MAP[k]);
-    const setClause = keys.map((m, k) => `${COLUMN_MAP[k]} = $${i + 1}`).join(", ");
+    const setClause = keys.map((k, i) => `${COLUMN_MAP[k]} = $${i + 1}`).join(", ");
     const values = keys.map((k) => fields[k]);
 
     const { rows } = await pool.query(
