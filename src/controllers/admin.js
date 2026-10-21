@@ -1,6 +1,9 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/AppError");
+
 const Movie = require("../repositories/movie.repository");
+const Theatre = require("../repositories/theatre.repository");
+const Screen = require("../repositories/screen.repository");
 
 const toMovie = (m) =>({
     id: m.id,
@@ -21,22 +24,64 @@ const parseId = (value) =>{
 }
 
 const createMovie = asyncHandler(async(req,res) =>{
-    const row = await Movie.createMovie(req.body);
-    res.status(201).json({
-        data: { movie: toMovie(row)}
-    });
+    try{
+        const row = await Movie.createMovie(req.body);
+        res.status(201).json({
+            data: { movie: toMovie(row)}
+        });
+    }
+    catch(err){
+        res.status(400).send("ERROR : " + err.message);
+    }
 });
 
 const updateMovie = asyncHandler(async(req, res) => {
-    const id = parseId(req.params.id);
-    const row = await Movie.updateMovie(id, req.body);
+    try{
+        const id = parseId(req.params.id);
+        const row = await Movie.updateMovie(id, req.body);
 
-    if(!row) throw new AppError(404, "MOVIE_NOT_FOUND", "Movie not found");
+        if(!row) throw new AppError(404, "MOVIE_NOT_FOUND", "Movie not found");
 
-    res.status(200).json({
-        data: { movie: toMovie(row) }
-    });
+        res.status(200).json({
+            data: { movie: toMovie(row) }
+        });
+    }catch(err){
+        res.status(400).send("ERROR : " + err.message);
+    }
 });
 
+const createTheatre = asyncHandler(async(req,res) =>{
+    try{
+        const row = await Theatre.createTheatre(req.body);
+        res.status(201).json({
+            data : { theatre: row}
+        });
+    }catch(err){
+        res.status(400).send("ERROR : " + err.message);
+    }
+});
 
-module.exports = { createMovie, updateMovie };
+const createScreen = asyncHandler(async(req,res) =>{
+    try{
+        let row; 
+        try{
+            
+            row = await Screen.createScreen(req.body);        
+        }catch(err){
+            if(err.code === "23503") throw new AppError(404, "THEATRE_NOT_FOUND", "Theatre not found");
+
+            if(err.code === "23505") throw new AppError(409, "SCREEN_NAME_TAKEN", "A Screen with this name already exists in this theatre");
+
+            throw err;
+        }
+
+        res.status(201).json({
+            data : { screen : { id: row.id, theatreId: row.theatre_id, name: row.name } }
+        });
+    }
+    catch(err){
+        res.status(400).send("ERROR : " + err.message);
+    }
+});
+
+module.exports = { createMovie, updateMovie, createTheatre, createScreen };

@@ -31,4 +31,17 @@ const movieUpdateSchema = movieSchema
 
 
 
-module.exports = { signupSchema, loginSchema, movieSchema, movieUpdateSchema };
+const theatreSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  city: z.string().trim().min(1).max(100),
+  address: z.string().trim().min(1).max(500),
+});
+
+const screenSchema = z.object({
+  theatreId: z.number().int().positive(),
+  name: z.string().trim().min(1).max(100),
+});
+
+module.exports = { signupSchema, loginSchema, movieSchema, movieUpdateSchema,
+  theatreSchema, screenSchema
+ };
