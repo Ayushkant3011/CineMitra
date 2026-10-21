@@ -42,6 +42,27 @@ const screenSchema = z.object({
   name: z.string().trim().min(1).max(100),
 });
 
+
+
+const seatLayoutSchema = z
+  .object({
+    screenId: z.number().int().positive(),
+    rows: z
+      .array(
+        z.object({
+          rowLabel: z.string().trim().toUpperCase().regex(/^[A-Z]{1,2}$/, "must be 1-2 letters"),
+          seatCount: z.number().int().min(1).max(50),
+          category: z.enum(["silver", "gold", "premium"]),
+        })
+      )
+      .min(1)
+      .max(30),
+  })
+  .refine(
+    (d) => new Set(d.rows.map((r) => r.rowLabel)).size === d.rows.length,
+    { message: "duplicate rowLabel in rows", path: ["rows"] }
+  );
+
 module.exports = { signupSchema, loginSchema, movieSchema, movieUpdateSchema,
-  theatreSchema, screenSchema
- };
+  theatreSchema, screenSchema, seatLayoutSchema
+};

@@ -4,6 +4,7 @@ const AppError = require("../utils/AppError");
 const Movie = require("../repositories/movie.repository");
 const Theatre = require("../repositories/theatre.repository");
 const Screen = require("../repositories/screen.repository");
+const Seat = require("../repositories/seat.repository");
 
 const toMovie = (m) =>({
     id: m.id,
@@ -84,4 +85,37 @@ const createScreen = asyncHandler(async(req,res) =>{
     }
 });
 
-module.exports = { createMovie, updateMovie, createTheatre, createScreen };
+
+const createSeats = asyncHandler(async (req,res) =>{
+    try{
+        const { screenId, rows } = req.body;
+
+        const seats = rows.flatMap((r) =>
+            Array.from({ length: r.seatCount }, (_, i) => ({
+                rowLabel: r.rowLabel,
+                seatNumber: i + 1,
+                category: r.category,
+            }))
+        );
+
+        let created;
+        try{
+            created = await Seat.createSeats(screenId, seats);
+        }catch(err){
+            if (err.code === "23503") throw new AppError(404, "SCREEN_NOT_FOUND", "Screen not found");
+            
+            if (err.code === "23505") throw new AppError(409, "SEATS_EXIST", "One or more of these seats already exist on this screen");
+            
+            throw err;
+        }
+
+        res.status(201).json({
+            data : { screenId, created }
+        });
+    }
+    catch(err){
+        res.status(400).send("ERROR : " + err.message);
+    }
+});
+
+module.exports = { createMovie, updateMovie, createTheatre, createScreen, createSeats };
