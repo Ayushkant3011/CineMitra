@@ -63,59 +63,48 @@ const createTheatre = asyncHandler(async(req,res) =>{
 });
 
 const createScreen = asyncHandler(async(req,res) =>{
+    let row;
     try{
-        let row; 
-        try{
-            
-            row = await Screen.createScreen(req.body);        
-        }catch(err){
-            if(err.code === "23503") throw new AppError(404, "THEATRE_NOT_FOUND", "Theatre not found");
+        row = await Screen.createScreen(req.body);
+    }catch(err){
+        if(err.code === "23503") throw new AppError(404, "THEATRE_NOT_FOUND", "Theatre not found");
 
-            if(err.code === "23505") throw new AppError(409, "SCREEN_NAME_TAKEN", "A Screen with this name already exists in this theatre");
+        if(err.code === "23505") throw new AppError(409, "SCREEN_NAME_TAKEN", "A Screen with this name already exists in this theatre");
 
-            throw err;
-        }
-
-        res.status(201).json({
-            data : { screen : { id: row.id, theatreId: row.theatre_id, name: row.name } }
-        });
+        throw err;
     }
-    catch(err){
-        res.status(400).send("ERROR : " + err.message);
-    }
+
+    res.status(201).json({
+        data : { screen : { id: row.id, theatreId: row.theatre_id, name: row.name } }
+    });
 });
 
 
 const createSeats = asyncHandler(async (req,res) =>{
+    const { screenId, rows } = req.body;
+
+    const seats = rows.flatMap((r) =>
+        Array.from({ length: r.seatCount }, (_, i) => ({
+            rowLabel: r.rowLabel,
+            seatNumber: i + 1,
+            category: r.category,
+        }))
+    );
+
+    let created;
     try{
-        const { screenId, rows } = req.body;
+        created = await Seat.createSeats(screenId, seats);
+    }catch(err){
+        if (err.code === "23503") throw new AppError(404, "SCREEN_NOT_FOUND", "Screen not found");
 
-        const seats = rows.flatMap((r) =>
-            Array.from({ length: r.seatCount }, (_, i) => ({
-                rowLabel: r.rowLabel,
-                seatNumber: i + 1,
-                category: r.category,
-            }))
-        );
+        if (err.code === "23505") throw new AppError(409, "SEATS_EXIST", "One or more of these seats already exist on this screen");
 
-        let created;
-        try{
-            created = await Seat.createSeats(screenId, seats);
-        }catch(err){
-            if (err.code === "23503") throw new AppError(404, "SCREEN_NOT_FOUND", "Screen not found");
-            
-            if (err.code === "23505") throw new AppError(409, "SEATS_EXIST", "One or more of these seats already exist on this screen");
-            
-            throw err;
-        }
-
-        res.status(201).json({
-            data : { screenId, created }
-        });
+        throw err;
     }
-    catch(err){
-        res.status(400).send("ERROR : " + err.message);
-    }
+
+    res.status(201).json({
+        data : { screenId, created }
+    });
 });
 
 module.exports = { createMovie, updateMovie, createTheatre, createScreen, createSeats };
