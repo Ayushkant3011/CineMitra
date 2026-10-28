@@ -6,6 +6,8 @@ const Theatre = require("../repositories/theatre.repository");
 const Screen = require("../repositories/screen.repository");
 const Seat = require("../repositories/seat.repository");
 
+const showService = require("../services/show.service");
+
 const toMovie = (m) =>({
     id: m.id,
     title: m.title,
@@ -107,4 +109,23 @@ const createSeats = asyncHandler(async (req,res) =>{
     });
 });
 
-module.exports = { createMovie, updateMovie, createTheatre, createScreen, createSeats };
+
+const createShow = asyncHandler(async(req, res) =>{
+    const { show, prices } = await showService.createShow(req.body);
+
+    res.status(201).json({
+        data:{
+            show:{
+                id: show.id,
+                movieId: show.movie_id,
+                screenId: show.screen_id,
+                startTime: show.start_time,
+                endTime: show.end_time,
+                status: show.status,
+                prices,
+            },
+        },
+    });
+});
+
+module.exports = { createMovie, updateMovie, createTheatre, createScreen, createSeats, createShow };

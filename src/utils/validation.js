@@ -63,6 +63,33 @@ const seatLayoutSchema = z
     { message: "duplicate rowLabel in rows", path: ["rows"] }
   );
 
+
+const showSchema = z
+  .object({
+    movieId: z.number().int().positive(),
+    screenId: z.number().int().positive(),
+    startTime: z.string().datetime({ offset: true }),
+    endTime: z.string().datetime({ offset: true }),
+    prices: z
+      .array(
+        z.object({
+          category: z.enum(["silver", "gold", "premium"]),
+          price: z.number().positive().max(100000).multipleOf(0.01),
+        })
+      )
+      .min(1)
+      .max(3),
+  })
+  .refine((d) => Date.parse(d.endTime) > Date.parse(d.startTime), {
+    message: "endTime must be after startTime",
+    path: ["endTime"],
+  })
+  .refine((d) => new Set(d.prices.map((p) => p.category)).size === d.prices.length, {
+    message: "duplicate category in prices",
+    path: ["prices"],
+  });
+
+
 module.exports = { signupSchema, loginSchema, movieSchema, movieUpdateSchema,
-  theatreSchema, screenSchema, seatLayoutSchema
+  theatreSchema, screenSchema, seatLayoutSchema, showSchema
 };
