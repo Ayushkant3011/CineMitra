@@ -89,7 +89,24 @@ const showSchema = z
     path: ["prices"],
   });
 
+const showUpdateSchema = z
+  .object({
+    startTime: z.string().datetime({ offset: true }).optional(),
+    endTime: z.string().datetime({ offset: true }).optional(),
+    status: z.enum(["cancelled"]).optional(),
+  })
+  .refine((d) => Object.keys(d).length > 0, {
+    message: "at least one field is required",
+  })
+  .refine((d) => !(d.status && (d.startTime || d.endTime)), {
+    message: "cancel a show on its own, without changing its times",
+    path: ["status"],
+  })
+  .refine(
+    (d) => !(d.startTime && d.endTime) || Date.parse(d.endTime) > Date.parse(d.startTime),
+    { message: "endTime must be after startTime", path: ["endTime"] }
+);
 
 module.exports = { signupSchema, loginSchema, movieSchema, movieUpdateSchema,
-  theatreSchema, screenSchema, seatLayoutSchema, showSchema
+  theatreSchema, screenSchema, seatLayoutSchema, showSchema, showUpdateSchema
 };
