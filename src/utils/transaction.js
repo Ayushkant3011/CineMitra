@@ -1,26 +1,18 @@
-const pool = require("../config/database");
+const { pool } = require("../config/database");
 
-const withTransaction = async(fn) =>{
-    try{
-        const client = await pool.connect();
-        try{
-            await client.query("BEGIN");
-            const res = await fn(client);
-            await client.query("COMMIT");
-            return res;
-        }
-        catch(err){
-            await client.query("ROLLBACK");
-            throw err;
-        }
-        finally{
-            client.release();
-        }
-    }
-    catch(err){
-        console.log("Transaction Error", err);
-    }
+const withTransaction = async (fn) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 };
-
 
 module.exports = { withTransaction };
