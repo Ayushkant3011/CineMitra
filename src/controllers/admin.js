@@ -19,6 +19,16 @@ const toMovie = (m) =>({
     releaseDate: m.release_date,
 });
 
+const toShow = (show, prices) =>({
+    id: show.id,
+    movieId: show.movie_id,
+    screenId: show.screen_id,
+    startTime: show.start_time,
+    endTime: show.end_time,
+    status: show.status,
+    prices,
+});
+
 const parseId = (value) =>{
     const id = Number(value);
     if(!Number.isInteger(id) || id <= 0) throw new AppError(400, "VALIDATION_ERROR", "Id Must be a positive Integer");
@@ -110,22 +120,32 @@ const createSeats = asyncHandler(async (req,res) =>{
 });
 
 
-const createShow = asyncHandler(async(req, res) =>{
-    const { show, prices } = await showService.createShow(req.body);
+const createShow = asyncHandler(async(req, res, next) =>{
+    try{
+        const { show, prices } = await showService.createShow(req.body);
 
-    res.status(201).json({
-        data:{
-            show:{
-                id: show.id,
-                movieId: show.movie_id,
-                screenId: show.screen_id,
-                startTime: show.start_time,
-                endTime: show.end_time,
-                status: show.status,
-                prices,
+        res.status(201).json({ data:{
+                show:
+                    toShow(show, prices)
             },
-        },
-    });
+        });
+    }catch(err){
+        next(err);
+    }
 });
 
-module.exports = { createMovie, updateMovie, createTheatre, createScreen, createSeats, createShow };
+const updateShow =async(req, res, next) =>{
+    try{
+        const id = parseId(req.params.id);
+        const { show, prices } = await showService.updateShow(id, req.body);
+
+        res.status(200).json({
+            data: { show: toShow(show, prices) }
+        });
+    
+    }catch(err){
+        next(err);
+    }
+};
+
+module.exports = { createMovie, updateMovie, createTheatre, createScreen, createSeats, createShow, updateShow };
