@@ -36,6 +36,7 @@ Everything built and tested so far. Base URL: `http://localhost:5000`
 | POST | `/api/admin/screens` | admin | done |
 | POST | `/api/admin/seats` | admin | done |
 | POST | `/api/admin/shows` | admin | done |
+| PUT | `/api/admin/shows/:id` | admin | done |
 
 ---
 
@@ -414,6 +415,104 @@ Both numbers must match.
 
 Note: ids skip numbers after failed inserts (for example show ids 1 and 4). Postgres sequences never reuse numbers, and this is normal.
 
+ 
+### PUT /api/admin/shows/:id
+ 
+Edits a show's times, or cancels it. The movie and screen cannot be changed (cancel the show and create a new one). Prices cannot be edited here.
+ 
+Rules enforced:
+ 
+1. The show must exist and be `scheduled`. A `cancelled` or `completed` show cannot be edited.
+2. `startTime` and `endTime` are optional. A missing one keeps its current value, and the merged `endTime` must be after the merged `startTime`.
+3. `status` can only be `"cancelled"`, and must be sent **on its own**, without times.
+4. A show with **active bookings** (a `confirmed` seat, or a `held` seat whose hold has not expired) cannot be edited or cancelled yet. This waits for the cancellation and refund flow.
+5. Moving a show into another show's slot is rejected by the same database exclusion constraint as create (`SHOW_OVERLAP`). A show never conflicts with its own old slot.
+6. The show row is locked (`SELECT ... FOR UPDATE`) inside the transaction, so concurrent edits cannot interleave.
+**Request: change times** (`PUT /api/admin/shows/4`)
+```json
+{
+  "startTime": "2026-11-01T21:00:00+05:30",
+  "endTime": "2026-11-01T23:30:00+05:30"
+}
+```
+ 
+**Request: change only the end time**
+```json
+{ "endTime": "2026-11-01T22:00:00+05:30" }
+```
+ 
+**Request: cancel**
+```json
+{ "status": "cancelled" }
+```
+ 
+**Success: `200`**: the same shape as create, with the current times and the 3 prices.
+```json
+{
+  "data": {
+    "show": {
+      "id": "4",
+      "movieId": "1",
+      "screenId": "5",
+      "startTime": "2026-11-01T15:30:00.000Z",
+      "endTime": "2026-11-01T18:00:00.000Z",
+      "status": "scheduled",
+      "prices": [
+        { "category": "gold", "price": 220 },
+        { "category": "premium", "price": 350 },
+        { "category": "silver", "price": 150 }
+      ]
+    }
+  }
+}
+```
+ 
+Test data: show 1 (18:00 to 20:30) and show 4 (20:30 to 23:00) on the same screen. Run the table **in order**, because the later rows change the state.
+ 
+| # | Request | Expected |
+|---|---|---|
+| 1 | `PUT /api/admin/shows/4` `{ "startTime": "2026-11-01T21:00:00+05:30", "endTime": "2026-11-01T23:30:00+05:30" }` | `200`, new times, 3 prices still attached |
+| 2 | `PUT /api/admin/shows/4` `{ "endTime": "2026-11-01T22:00:00+05:30" }` | `200`, times now 21:00 to 22:00 (start was kept) |
+| 3 | `PUT /api/admin/shows/4` `{ "endTime": "2026-11-01T20:00:00+05:30" }` | `400`, "endTime: must be after startTime" (before the existing 21:00 start) |
+| 4 | `PUT /api/admin/shows/4` `{ "startTime": "2026-11-01T19:00:00+05:30", "endTime": "2026-11-01T23:00:00+05:30" }` | `409`, `SHOW_OVERLAP` (clashes with show 1) |
+| 5 | `endTime` earlier than `startTime` in the same body | `400`, `VALIDATION_ERROR` |
+| 6 | `{}` | `400`, "at least one field is required" |
+| 7 | `{ "status": "scheduled" }` | `400`, `VALIDATION_ERROR` |
+| 8 | `{ "status": "cancelled", "startTime": "2026-11-01T21:00:00+05:30" }` | `400`, "cancel a show on its own" |
+| 9 | `PUT /api/admin/shows/99999` `{ "status": "cancelled" }` | `404`, `SHOW_NOT_FOUND` |
+| 10 | `PUT /api/admin/shows/abc` `{ "status": "cancelled" }` | `400`, `VALIDATION_ERROR` |
+| 11 | Normal user / not logged in | `403` / `401` |
+| 12 | `PUT /api/admin/shows/4` `{ "status": "cancelled" }` | `200`, `status: "cancelled"` |
+| 13 | Repeat #12 | `409`, `SHOW_NOT_EDITABLE` |
+| 14 | `POST /api/admin/shows` on the same screen in the cancelled show's old slot | `201` (a cancelled show no longer blocks the slot) |
+| 15 | Cancel or edit a show that has an active booking (simulated in SQL, below) | `409`, `SHOW_HAS_BOOKINGS` |
+ 
+Simulating row 15 (no booking API exists yet). Change both `1`s together to the show id you are testing:
+```sql
+WITH new_booking AS (
+  INSERT INTO bookings (user_id, show_id, status, total_amount)
+  VALUES (4, 1, 'confirmed', 150)
+  RETURNING id
+)
+INSERT INTO booking_seats (booking_id, show_id, seat_id, status, price)
+SELECT new_booking.id,
+       1,
+       (SELECT id FROM seats WHERE screen_id = (SELECT screen_id FROM shows WHERE id = 1) LIMIT 1),
+       'confirmed',
+       150
+FROM new_booking
+RETURNING booking_id;
+```
+Then `PUT /api/admin/shows/1` with `{ "status": "cancelled" }` returns `409 SHOW_HAS_BOOKINGS`. Clean up afterwards (the seat row is removed by the cascade):
+```sql
+DELETE FROM bookings WHERE id = <booking_id from above>;
+```
+ 
+DB check:
+```sql
+SELECT id, start_time, end_time, status FROM shows ORDER BY id;
+```
+ 
 ---
 
 ## Error codes seen so far
