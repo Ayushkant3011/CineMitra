@@ -9,7 +9,8 @@
     "test": "node --test Test/*.test.js",
     "migrate": "node-pg-migrate -j js --migrations-dir migrations up",
     "migrate:down": "node-pg-migrate -j js --migrations-dir migrations down",
-    "migrate:create": "node-pg-migrate -j js --migrations-dir migrations create"
+    "migrate:create": "node-pg-migrate -j js --migrations-dir migrations create",
+    "seed": "node src/scripts/seed.js"
   },
   "keywords": [],
   "author": "",
