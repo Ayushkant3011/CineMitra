@@ -68,3 +68,26 @@ function buildFilters({city, language, genre, search}){
     return {where, params};
 
 }
+
+async function findMovies(filters, limit, offset){
+    try{
+        const { where, params } = buildFilters(filters);
+        const limitIndex = params.length + 1;
+        const offsetIndex = params.length + 2;
+
+
+        const { rows } = await pool.query(
+            `SELECT ${MOVIE_COLUMNS}, ${CITIES_COLUMN}
+            FROM movie as m
+            ${where}
+            ORDER BY m.release_date DESC NULLS LAST, m.id DESC
+            LIMIT $${limitIndex} OFFSET $${offsetIndex}`,
+            [...params, limit, offset]
+        );
+
+        return rows
+    }
+    catch(err){
+        throw err;
+    }
+}
