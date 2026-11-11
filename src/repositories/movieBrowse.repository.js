@@ -85,9 +85,42 @@ async function findMovies(filters, limit, offset){
             [...params, limit, offset]
         );
 
-        return rows
+        return rows;
     }
     catch(err){
         throw err;
     }
 }
+
+async function countMovies(filters){
+    try{
+        const { where, params } = buildFilters(filters);
+        const { rows } = await pool.query(
+            `SELECT count(*)::int AS total FROM movies m ${where}`,
+            params
+        );
+
+        return rows[0].total;
+    }catch(err){
+        throw err;
+    }
+}
+
+
+async function findMovieById(id){
+    try{
+        const { rows } = await pool.query(
+            `SELECT ${MOVIE_COLUMNS}, ${CITIES_COLUMN}
+            FROM movies m
+            WHERE m.id = $1`,
+            [id]
+        );
+
+        return rows[0] || null;
+    }catch(err){
+        throw err;
+    }
+}
+
+
+module.exports = { findMovies, countMovies, findMovieById };
